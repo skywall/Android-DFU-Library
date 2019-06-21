@@ -46,11 +46,6 @@ import android.os.Build;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -61,6 +56,10 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Locale;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import no.nordicsemi.android.dfu.internal.ArchiveInputStream;
 import no.nordicsemi.android.dfu.internal.HexInputStream;
 import no.nordicsemi.android.dfu.internal.exception.DeviceDisconnectedException;
@@ -877,6 +876,15 @@ public abstract class DfuBaseService extends IntentService implements DfuProgres
 					 *  NOTE: We are doing this to avoid the hack with calling the hidden gatt.refresh() method, at least for bonded devices.
 					 */
 					if (gatt.getDevice().getBondState() == BluetoothDevice.BOND_BONDED) {
+						logi("Remove bond before starting DFU");
+						try {
+							Method m = gatt.getDevice().getClass()
+									.getMethod("removeBond", (Class[]) null);
+							m.invoke(gatt.getDevice(), (Object[]) null);
+						} catch (Exception e) {
+							Log.e(TAG, e.getMessage());
+						}
+
 						logi("Waiting 1600 ms for a possible Service Changed indication...");
 						waitFor(1600);
 						// After 1.6s the services are already discovered so the following gatt.discoverServices() finishes almost immediately.
